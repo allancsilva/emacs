@@ -40,6 +40,9 @@
 (set-selection-coding-system 'utf-8)
 (setq-default buffer-file-coding-system 'utf-8-unix)
 
+;; remover a mensagem de erro
+;; ad-handle-definition: ‘hippie-expand’ got redefined
+(setq ad-redefinition-action 'accept)
 
 ;;________ {Straight} ________;; 
 (custom-set-variables
@@ -736,7 +739,9 @@
   :defer t
   :mode
 	     ("\\.php\\'" . php-mode)
-  :hook ((php-mode . (lambda () (set (make-local-variable 'company-backends))))))
+  :hook
+    (php-mode-hook . lsp-deferred) 
+    ((php-mode . (lambda () (set (make-local-variable 'company-backends))))))
 (add-to-list 'auto-mode-alist '("\\.php$" . php-mode))
 
 (use-package phpunit
@@ -768,37 +773,36 @@
   :commands (company-jedi)
   :after (company python-mode))
 
-;; (use-package lsp-mode
-;;   :config    
-;;     (add-hook 'js2-mode 'lsp)
-;;     (add-hook 'php-mode 'lsp)
-;;     (add-hook 'css-mode 'lsp)
-;;     (add-hook 'web-mode 'lsp)
-;;     (add-hook 'php-mode 'lsp)
-;;     (add-hook 'css-mode 'lsp)
-;;   :commands lsp)
+;;________ {Vimrc} ________;;
+(use-package vimrc-mode
+  :mode "\\.vim\\(rc\\)?\\'")
 
-;; (use-package lsp-ui
-;; 	     :requires lsp-mode flycheck
-;; 	     :config
-;; 	     (setq lsp-ui-doc-enable t
-;; 		   lsp-ui-doc-use-childframe t
-;; 		   lsp-ui-doc-position ‘top
-;; 		   lsp-ui-doc-include-signature t
-;; 		   lsp-ui-sideline-enable nil
-;; 		   lsp-ui-flycheck-enable t
-;; 		   lsp-ui-flycheck-list-position ‘right
-;; 		   lsp-ui-flycheck-live-reporting t
-;; 		   lsp-ui-peek-enable t
-;; 		   lsp-ui-peek-list-width 60
-;; 		   lsp-ui-peek-peek-height 25
-;; 		   lsp-ui-sideline-enable nil)
-;; 	     (add-hook 'lsp-mode-hook 'lsp-ui-mode))
+;;________ {LSP} ________;;
+(use-package lsp-mode
+  :ensure
+  :commands lsp
+  :custom
+  (lsp-enable-snippet t)
+  (lsp-auto-guess-root t)
+  ;; what to use when checking on-save. "check" is default, I prefer clippy
+  (lsp-rust-analyzer-cargo-watch-command "clippy")
+  (lsp-eldoc-render-all t)
+  (lsp-idle-delay 0.6)
+  (lsp-rust-analyzer-server-display-inlay-hints t)
+  :config
+  (add-hook 'lsp-mode-hook 'lsp-ui-mode)
+    ;; Support reading large blobs of data from lsp servers.
+  (setq read-process-output-max 1048576) ; 1mb
+  (with-eval-after-load 'flycheck
+    (add-to-list 'flycheck-checkers #'lsp)))
 
-
-
-
-
+(use-package lsp-ui
+  :ensure
+  :commands lsp-ui-mode
+  :custom
+  (lsp-ui-peek-always-show t)
+  (lsp-ui-sideline-show-hover t)
+  (lsp-ui-doc-enable nil))
 
 
 ;; ;; Mapeamentos
