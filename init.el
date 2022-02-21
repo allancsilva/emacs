@@ -131,11 +131,11 @@
 (setq default-frame-alist
       (append (list '(width  . 72) '(height . 40)
                     '(vertical-scroll-bars . nil)
-                    '(internal-border-width . 20)
+                    '(internal-border-width . 24)
                     '(font . "Fira Code 12")
                     )))
 (set-frame-parameter (selected-frame)
-                     'internal-border-width 20)
+                     'internal-border-width 24)
 (setq window-divider-default-right-width 3)
 (setq window-divider-default-places 'right-only)
 (window-divider-mode)
@@ -143,8 +143,16 @@
 (use-package dracula-theme
   :config (load-theme 'dracula t))
 
+;; (use-package chocolate-theme
+;;   :config (load-theme 'chocolate t))
+
+;;   :config 
+;;   ;; (load-theme 'apropospriate-dark t))
+;;   ;; or
+;;   (load-theme 'apropospriate-light t))
+
+
 (use-package all-the-icons
-  :ensure t
   :if (display-graphic-p))
 
 (use-package spaceline
@@ -233,13 +241,6 @@
   :hook(
     (prog-mode . rainbow-delimiters-mode)
     (text-mode . rainbow-delimiters-mode)))
-
-;; (use-package rainbow-mode
-;;   :commands rainbow-mode
-;;   :diminish
-;;   :hook (
-;;   (web-mode . rainbow-mode)
-;;   (css-mode . rainbow-mode)))
 
 (use-package rainbow-mode
   :commands rainbow-mode
@@ -445,6 +446,29 @@
 (evil-commentary-mode)
 
 ;;________ {Usabilidade} ________;;
+(use-package neotree
+  :bind
+  ("<f8>" . neotree-toggle)
+  :config
+  ;; needs package all-the-icons
+  ;; (setq neo-theme (if (display-graphic-p) 'icons 'arrow))
+  ;; (setq neo-theme 'arrow)
+  ;; alternativa icon ou arrow
+  (setq neo-theme 'icons)
+  (setq neo-smart-open t)
+  (setq neo-window-width 25)
+  (setq-default neo-show-hidden-files t)
+
+  (add-hook 'neo-after-create-hook
+            (lambda (&rest _) (display-line-numbers-mode -1)))
+
+  (add-hook 'neo-after-create-hook
+            (lambda (&rest _) (setq mode-line-format nil)))
+
+  (add-hook 'neo-after-create-hook
+            (lambda (&rest _) (setq header-line-format nil)))
+  )
+
 (straight-use-package 'which-key)
 (which-key-mode)
 (setq which-key-popup-type 'minibuffer) 
