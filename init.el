@@ -132,7 +132,7 @@
       (append (list '(width  . 72) '(height . 40)
                     '(vertical-scroll-bars . nil)
                     '(internal-border-width . 24)
-                    '(font . "Fira Code 12")
+                    '(font . "Roboto Mono 13")
                     )))
 (set-frame-parameter (selected-frame)
                      'internal-border-width 24)
@@ -140,16 +140,18 @@
 (setq window-divider-default-places 'right-only)
 (window-divider-mode)
 
-(use-package dracula-theme
-  :config (load-theme 'dracula t))
+;; (use-package dracula-theme
+;;   :config (load-theme 'dracula t))
 
 ;; (use-package chocolate-theme
 ;;   :config (load-theme 'chocolate t))
 
-;;   :config 
-;;   ;; (load-theme 'apropospriate-dark t))
-;;   ;; or
-;;   (load-theme 'apropospriate-light t))
+(use-package apropospriate-theme
+  :ensure t
+  :config 
+  ;; (load-theme 'apropospriate-dark t))
+  ;; or
+  (load-theme 'apropospriate-light t))
 
 
 (use-package all-the-icons
@@ -160,7 +162,7 @@
   (setq-default powerline-image-apple-rgb nil)
 	(setq powerline-height 24
         spaceline-highlight-face-func 'spaceline-highlight-face-evil-state
-        powerline-default-separator 'arrow)
+        powerline-default-separator 'bar)
 	(setq-default spaceline-window-numbers-unicode t)
   (setq-default spaceline-minor-modes-separator " ")
   (require 'spaceline-config)
@@ -446,6 +448,19 @@
 (evil-commentary-mode)
 
 ;;________ {Usabilidade} ________;;
+(use-package helpful
+  :straight t
+  :commands (helpful-callable
+	     helpful-variable
+	     helpful-key
+	     helpful-macro
+	     helpful-function
+	     helpful-command))
+	 
+(use-package code-cells
+  :straight t
+  :commands (code-cells-mode))
+
 (use-package neotree
   :bind
   ("<f8>" . neotree-toggle)
@@ -477,24 +492,23 @@
   :ensure t
   :init (global-flycheck-mode))
 
-(use-package so-long
-  :if (>= emacs-major-version 27)
-  :defer 11
-  :custom
-  (so-long-threshold 500)
+(use-package flycheck-package
+  :straight t
+  :after flycheck
   :config
-  (global-so-long-mode))
+  (flycheck-package-setup))
+
+
 
 (use-package ace-window)
 
-(straight-use-package 'yasnippet)
-(straight-use-package 'yasnippet-snippets)
-(yas-global-mode t)
+(use-package yasnippet
+  :straight t
+  :hook
+  (prog-mode . yas-minor-mode))
 
 (use-package yasnippet-snippets
-  :ensure t
-  :after (yasnippet)
-  :config (yas-global-mode 1))
+  :straight t)
 
 (use-package all-the-icons
   :if (display-graphic-p))
@@ -623,8 +637,8 @@
   (add-to-list 'auto-mode-alist '("\\.tsx\\'" . web-mode))
   (add-to-list 'auto-mode-alist '("\\.jsx\\'" . web-mode))
   :config
-  (setq web-mode-enable-current-element-highlight t)
-  (setq web-mode-enable-current-column-highlight t)   
+  ;; (setq web-mode-enable-current-element-highlight t)
+  ;; (setq web-mode-enable-current-column-highlight t)   
   (setq-default web-mode-code-indent-offset 2)
   (setq-default web-mode-markup-indent-offset 2)
   (setq-default web-mode-attribute-indent-offset 2)
@@ -639,6 +653,27 @@
   :config
   (add-to-list 'shr-external-rendering-functions '(pre . shr-tag-pre-highlight)))
 
+;;________ {Markdown} ________;;
+(use-package markdown-mode
+  :straight t
+  :mode "\\.md\\'"
+  :config
+  (setq markdown-command
+	(concat
+	 "pandoc"
+	 " --from=markdown --to=html"
+	 " --standalone --mathjax --highlight-style=pygments"
+	 " --css=pandoc.css"
+	 " --quiet"
+	 ))
+  (setq markdown-live-preview-delete-export 'delete-on-export)
+  (setq markdown-asymmetric-header t)
+  (setq markdown-open-command "/home/pavel/bin/scripts/chromium-sep")
+  (add-hook 'markdown-mode-hook #'smartparens-mode)
+  (general-define-key
+   :keymaps 'markdown-mode-map
+   "M-<left>" 'markdown-promote
+   "M-<right>" 'markdown-demote))
 
 ;;________ {CSS} ________;;
 (setq css-indent-level 2)
@@ -707,9 +742,15 @@
   (setq company-tooltip-limit 20)
   (setq company-show-numbers t)
   (setq company-dabbrev-downcase nil)
-  (setq company-idle-delay 0)
-  (setq company-echo-delay 0)
-
+  (setq company-echo-delay 0.1)
+  (setq company-idle-delay 0.1)
+  (setq company-minimum-prefix-length 2)
+  (setq company-require-match nil)
+  (setq company-dabbrev-downcase nil)
+  (setq company-selection-wrap-around t)
+  (setq company-tooltip-flip-when-above t)
+  (setq company-tooltip-align-annotations t)
+  
   (setq company-backends '(company-keywords
                            company-semantic
                            company-files
@@ -756,7 +797,18 @@
   :if window-system
   :after company
   :hook
-  (company-mode-hook . company-box-mode)) 
+  (company-mode-hook . company-box-mode))
+
+(use-package company-prescient
+  :after (company prescient)
+  :straight t
+
+  :preface
+  (eval-when-compile
+    (declare-function company-prescient-mode nil))
+
+  :config
+  (company-prescient-mode t))
 
 ;;________ {PHP} ________;;
 (use-package php-mode
