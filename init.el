@@ -4,21 +4,18 @@
 ;;________ {Configuraçoes gerais} ________;;
 (menu-bar-mode -1)
 (scroll-bar-mode -1)
-(tool-bar-mode -1)                  
-(tooltip-mode -1)   
+(tool-bar-mode -1)
+(tooltip-mode -1)
 (column-number-mode)
 (global-display-line-numbers-mode t)
 (setq inhibit-startup-message t)
-(setq initial-scratch-message nil)   
+(setq initial-scratch-message nil)
 (setq next-line-add-newlines nil)
 (defalias 'yes-or-no-p 'y-or-n-p)
-(setq make-backup-files nil)
-(setq auto-save-default nil)
-(setq create-lockfiles nil)
+(setq use-dialog-box nil)
+
 ;; Edição de texto e autocomplete
-(global-font-lock-mode t)
 (setq font-lock-maximum-decoration t)
-(show-paren-mode t)
 (setq evil-want-keybinding nil)
 (setq show-paren-style 'expression)
 (setq completion-ignore-case t)
@@ -28,11 +25,16 @@
 (setq tab-width 2)
 (setq-default cursor-type 'bar)
 (blink-cursor-mode 1)
+(global-auto-revert-mode 1)
+(global-font-lock-mode t)
+(show-paren-mode t)
+
 ;; Improve scrolling.
-(setq mouse-wheel-scroll-amount '(1 ((shift) . 1))) 
+(setq mouse-wheel-scroll-amount '(1 ((shift) . 1)))
 (setq mouse-wheel-progressive-speed nil)
 (setq mouse-wheel-follow-mouse 't)
-(setq scroll-step 1) 
+(setq scroll-step 1)
+
 ;; UTF-8
 (prefer-coding-system 'utf-8)
 (set-language-environment "UTF-8")
@@ -40,11 +42,49 @@
 (set-selection-coding-system 'utf-8)
 (setq-default buffer-file-coding-system 'utf-8-unix)
 
+;; Ativar arquivo recentes
+(recentf-mode 1)
+;; Navegar entre os mini buffers do Emacs
+;; M-n e M-p
+(setq history-length 25)
+(savehist-mode 1)
+(save-place-mode 1)
+
+;; Backups aqui
+;; New location for backups.
+(setq backup-directory-alist '(("." . "~/.emacs.d/backups")))
+;; Silently delete execess backup versions
+(setq delete-old-versions t)
+;; Only keep the last 1000 backups of a file.
+(setq kept-old-versions 1000)
+;; Even version controlled files get to be backed up.
+(setq vc-make-backup-files t)
+;; Use version numbers for backup files.
+(setq version-control t)
 ;; remover a mensagem de erro
 ;; ad-handle-definition: ‘hippie-expand’ got redefined
 (setq ad-redefinition-action 'accept)
+;; Make Emacs backup everytime I save
+(defun my/force-backup-of-buffer ()
+  "Lie to Emacs, telling it the curent buffer has yet to be backed up."
+  (setq buffer-backed-up nil))
+(add-hook 'before-save-hook  'my/force-backup-of-buffer)
+;; [Default settings]
+;; Autosave when idle for 30sec or 300 input events performed
+(setq auto-save-timeout 30
+      auto-save-interval 300)
 
-;;________ {Straight} ________;; 
+; ;; Make frame transparency overridable
+(defvar efs/frame-transparency '(90 . 90))
+
+;; Set frame transparency
+(set-frame-parameter (selected-frame) 'alpha efs/frame-transparency)
+(add-to-list 'default-frame-alist `(alpha . ,efs/frame-transparency))
+(set-frame-parameter (selected-frame) 'fullscreen 'maximized)
+(add-to-list 'default-frame-alist '(fullscreen . maximized))
+
+
+;;________ {Straight} ________;;
 (custom-set-variables
  '(straight-repository-branch "develop")
  '(straight-check-for-modifications '(check-on-save find-when-checking))
@@ -101,23 +141,47 @@
 
 ;;________ {Melpa} ________;;
 (require 'package)
-(setq package-archives '( ("gnu" . "http://elpa.gnu.org/packages/")                 
+(setq package-archives '( ("gnu" . "http://elpa.gnu.org/packages/")
                           ("elpa" . "http://tromey.com/elpa/")
                           ("melpa" . "http://melpa.org/packages/")
-                          ("org" . "https://orgmode.org/elpa/")))
+                          ("org" . "https://orgmode.org/elpa/"))
+      tls-checktrust t
+      tls-program '("gnutls-cli --x509cafile %t -p %p %h")
+      gnutls-verify-error t)
 
 (when (not (package-installed-p 'use-package))
   (package-refresh-contents)
   (package-install 'use-package))
 (setq use-package-always-ensure t)
 
+
 ;;________ {Packages Aqui} ________;;
+;; (use-package benchmark-init
+;;   :config
+;;   ;; To disable collection of benchmark data after init is done.
+;;   ;; (add-hook 'after-init-hook 'benchmark-init/deactivate))
+;;   (add-hook 'after-init-hook
+;;             (lambda () (message "loaded in %s" (emacs-init-time))))
+
+
+
 (use-package benchmark-init
+  ;; complains error with 'void function benchmark-init/activate'
+  ;; when first run just after install, if use init.
+  :defer nil
   :config
+  (require 'benchmark-init)
+  (benchmark-init/activate)
+  :hook
   ;; To disable collection of benchmark data after init is done.
-  (add-hook 'after-init-hook 'benchmark-init/deactivate))
-  (add-hook 'after-init-hook
-            (lambda () (message "loaded in %s" (emacs-init-time))))
+  (after-init . benchmark-init/deactivate))
+
+(defalias 'y/profile-tabulated 'benchmark-init/show-durations-tabulated
+  "Profiling emacs startup time. Show result as a table.")
+(defalias 'y/profile-tree 'benchmark-init/show-durations-tree
+  "Profiling emacs startup time. Show result as a tree.")
+
+
 
 ;; Common libraries that are effectively part of the Emacs core library because
 (use-package dash :demand t)
@@ -140,19 +204,18 @@
 (setq window-divider-default-places 'right-only)
 (window-divider-mode)
 
-;; (use-package dracula-theme
-;;   :config (load-theme 'dracula t))
+(use-package dracula-theme
+  :config (load-theme 'dracula t))
 
 ;; (use-package chocolate-theme
 ;;   :config (load-theme 'chocolate t))
 
-(use-package apropospriate-theme
-  :ensure t
-  :config 
-  ;; (load-theme 'apropospriate-dark t))
-  ;; or
-  (load-theme 'apropospriate-light t))
-
+;; (use-package apropospriate-theme
+;;   :ensure t
+;;   :config
+;;   (load-theme 'apropospriate-dark t))
+;; ;;   ;; or
+  ;; (load-theme 'apropospriate-light t))
 
 (use-package all-the-icons
   :if (display-graphic-p))
@@ -162,7 +225,7 @@
   (setq-default powerline-image-apple-rgb nil)
 	(setq powerline-height 24
         spaceline-highlight-face-func 'spaceline-highlight-face-evil-state
-        powerline-default-separator 'bar)
+        powerline-default-separator 'arrow)
 	(setq-default spaceline-window-numbers-unicode t)
   (setq-default spaceline-minor-modes-separator " ")
   (require 'spaceline-config)
@@ -170,10 +233,10 @@
   (spaceline-spacemacs-theme)
   (spaceline-toggle-buffer-size-off)
   (spaceline-toggle-hud-off)
-  
+
   (spaceline-toggle-minor-modes-off)
   (spaceline-toggle-buffer-modified-off)
- 
+
   ;; (spaceline-toggle-buffer-id-off)
   (spaceline-toggle-major-mode-off)
   ;; (spaceline-toggle-process-off)
@@ -188,7 +251,7 @@
   ;; (spaceline-toggle-selection-info-off)
   ;; (spaceline-toggle-input-method-off)
   )
-;; types are: 'slant, 'arrow, 'cup, 'wave, 'none
+;; types are: 'slant, 'arrow, 'cup, 'wave, 'none, 'nil
 
 ;; Comment if you want to keep the modeline at the bottom
 (setq-default header-line-format mode-line-format)
@@ -248,9 +311,9 @@
   :commands rainbow-mode
   :diminish
   :hook ((web-mode-hook
-          css-mode-hook 
-          emacs-lisp-mode-hook 
-          js-mode-hook 
+          css-mode-hook
+          emacs-lisp-mode-hook
+          js-mode-hook
           sass-mode-hook)
           . rainbow-mode))
 
@@ -271,7 +334,6 @@
   (prog-mode . highlight-thing-mode))
 
 (use-package highlight-indent-guides
-  :if (display-graphic-p)
   :init
   (setq highlight-indent-guides-character ?‖)
   :custom
@@ -279,11 +341,11 @@
     (highlight-indent-guides-responsive t)
     (highlight-indent-guides-method 'character)
   :hook
-    (prog-mode  . highlight-indent-guides-mode)) 
+    (prog-mode  . highlight-indent-guides-mode))
 
 (use-package volatile-highlights
   :config
-  (volatile-highlights-mode t)) 
+  (volatile-highlights-mode t))
 
 (use-package info-colors
   :hook
@@ -383,7 +445,7 @@
 
 (use-package dired
   :straight (:type built-in)
-  :config  
+  :config
   (defun dired-open-file ()
     "Open file at point in OS default program."
     (interactive)
@@ -456,7 +518,34 @@
 	     helpful-macro
 	     helpful-function
 	     helpful-command))
-	 
+
+(use-package hungry-delete
+  :diminish
+  :hook
+  (after-init . global-hungry-delete-mode))
+
+(use-package whitespace
+  :diminish
+  :config
+  (progn
+    (setq whitespace-line-column 80) ;; limit line length
+    (setq whitespace-style
+          '(face trailing spaces tabs lines-tail newline
+                 space-before-tab space-before-tab::tab
+                 space-before-tab::space space-after-tab::tab
+                 space-after-tab::space space-after-tab
+                 newline-mark space-mark tab-mark))
+    (setq whitespace-display-mappings
+          '((space-mark 32 [183] [46])
+            (newline-mark 10 [182 10])
+            ;; (tab-mark 9 [?. 9] [92 9])
+            (tab-mark   ?\t   [?\xBB ?\t] [?\\ ?\t]))))
+  :hook
+  (prog-mode . whitespace-mode)
+  (text-mode . whitespace-mode)
+  (protobuf-mode . whitespace-mode)
+  (before-save . whitespace-cleanup))
+
 (use-package code-cells
   :straight t
   :commands (code-cells-mode))
@@ -484,9 +573,10 @@
             (lambda (&rest _) (setq header-line-format nil)))
   )
 
+
 (straight-use-package 'which-key)
 (which-key-mode)
-(setq which-key-popup-type 'minibuffer) 
+(setq which-key-popup-type 'minibuffer)
 
 (use-package flycheck
   :ensure t
@@ -497,8 +587,6 @@
   :after flycheck
   :config
   (flycheck-package-setup))
-
-
 
 (use-package ace-window)
 
@@ -604,7 +692,7 @@
   :hook
   (pdf-view-mode-hook . pdf-continuous-scroll-mode))
 
-;; Git 
+;; Git
 (straight-use-package 'magit)
 (straight-use-package
  '(git-modes
@@ -620,7 +708,7 @@
   (setq git-gutter:update-interval 2))
 
 
-;;======== {Linguagens aqui} ========;; 
+;;======== {Linguagens aqui} ========;;
 ;;________ {Web} _______;;
 (use-package web-mode
   :defer t
@@ -638,7 +726,7 @@
   (add-to-list 'auto-mode-alist '("\\.jsx\\'" . web-mode))
   :config
   ;; (setq web-mode-enable-current-element-highlight t)
-  ;; (setq web-mode-enable-current-column-highlight t)   
+  ;; (setq web-mode-enable-current-column-highlight t)
   (setq-default web-mode-code-indent-offset 2)
   (setq-default web-mode-markup-indent-offset 2)
   (setq-default web-mode-attribute-indent-offset 2)
@@ -716,52 +804,36 @@
               ;; (add-hook 'xref-backend-functions #'xref-js2-xref-backend nil t)
               )))
 
+
 ;;________ {Company} ________;;
 (use-package company
-  :ensure t
   :delight
-  :bind (("C-c ." . company-complete)
-         ("C-c C-." . company-complete)
-         ("C-c s s" . company-yasnippet)
-         :map company-active-map
-         ("C-n" . company-select-next)
-         ("C-p" . company-select-previous)
-         ("C-d" . company-show-doc-buffer)
-         ("M-." . company-show-location))
-  :init
-  (add-hook 'after-init-hook 'global-company-mode)
-  (add-hook 'c-mode-common-hook 'company-mode)
-  (add-hook 'sgml-mode-hook 'company-mode)
-  (add-hook 'emacs-lisp-mode-hook 'company-mode)
-  (add-hook 'text-mode-hook 'company-mode)
-  (add-hook 'lisp-mode-hook 'company-mode)
   :config
-  (eval-after-load 'c-mode
-    '(define-key c-mode-map (kbd "[tab]") 'company-complete))
-
-  (setq company-tooltip-limit 20)
+  (global-company-mode)
+  :custom
+  ;https://github.com/company-mode/company-mode/issues/14#issuecomment-290261406
+  ; Do not downcase the returned candidates automatically
+  (company-dabbrev-downcase nil)
+  ; Trigger completion immediately.
+  (company-idle-delay 0)
+  (company-minimum-prefix-length 1)
+  (company-tooltip-align-annotations t)
+  (company-dabbrev-other-buffers t) ; search buffers with the same major mode
+  (company-selection-wrap-around t)
+  ; Number the candidates (use M-1, M-2 etc to select completions).
+  (company-show-numbers t)
+  ;; (setq company-tooltip-limit 20)
   (setq company-show-numbers t)
   (setq company-dabbrev-downcase nil)
   (setq company-echo-delay 0.1)
   (setq company-idle-delay 0.1)
-  (setq company-minimum-prefix-length 2)
-  (setq company-require-match nil)
+  (setq company-minimum-prefix-length 3)
   (setq company-dabbrev-downcase nil)
   (setq company-selection-wrap-around t)
   (setq company-tooltip-flip-when-above t)
   (setq company-tooltip-align-annotations t)
-  
-  (setq company-backends '(company-keywords
-                           company-semantic
-                           company-files
-                           company-etags
-                           company-elisp
-                           company-jedi
-                           company-cmake
-                           company-ispell
-                           company-yasnippet))
 
-	(defun my-company-visible-and-explicit-action-p ()
+  (defun my-company-visible-and-explicit-action-p ()
     (and (company-tooltip-visible-p)
          (company-explicit-action-p)))
   (defun company-ac-setup ()
@@ -774,12 +846,42 @@
     (define-key company-active-map [tab]
       'company-select-next-if-tooltip-visible-or-complete-selection)
     (define-key company-active-map (kbd "TAB")
-      'company-select-next-if-tooltip-visible-or-complete-selection))
+      'company-select-next-if-tooltip-visible-or-complete-selection)))
 
-  (company-ac-setup)
-  (add-hook 'js2-mode-hook (lambda () (company-mode)))
-	
-  (global-company-mode))
+(use-package company-tabnine
+  :after company
+  :config
+  (add-to-list 'company-backends #'company-tabnine)
+  (setq company-tabnine--disable-next-transform nil)
+  (defun my-company--transform-candidates (func &rest args)
+    (if (not company-tabnine--disable-next-transform)
+        (apply func args)
+      (setq company-tabnine--disable-next-transform nil)
+      (car args)))
+
+  (defun my-company-tabnine (func &rest args)
+    (when (eq (car args) 'candidates)
+      (setq company-tabnine--disable-next-transform t))
+    (apply func args))
+
+  (advice-add #'company--transform-candidates :around #'my-company--transform-candidates)
+  (advice-add #'company-tabnine :around #'my-company-tabnine)
+  ;; Trigger completion immediately.
+  ;; (setq company-idle-delay 0)
+
+  ;; Number the candidates (use M-1, M-2 etc to select completions).
+  (setq company-show-numbers t)
+
+  ;; Use the tab-and-go frontend.
+  ;; Allows TAB to select and complete at the same time.
+  (company-tng-configure-default)
+  (setq company-frontends
+        '(company-tng-frontend
+          company-pseudo-tooltip-frontend
+          company-echo-metadata-frontend)))
+
+(use-package company-web
+    :straight t)
 
 (use-package company-quickhelp
   :after company
@@ -816,7 +918,7 @@
   :mode
 	     ("\\.php\\'" . php-mode)
   :hook
-    (php-mode-hook . lsp-deferred) 
+    (php-mode-hook . lsp-deferred)
     ((php-mode . (lambda () (set (make-local-variable 'company-backends))))))
 (add-to-list 'auto-mode-alist '("\\.php$" . php-mode))
 
@@ -882,7 +984,7 @@
 
 
 ;; ;; Mapeamentos
-;; (global-set-key (kbd "M-o") 'ace-window)
+(global-set-key (kbd "M-o") 'ace-window)
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
 (global-set-key (kbd "<f12>") 'next-buffer)
 (global-set-key (kbd "<f11>") 'previous-buffer)
