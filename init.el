@@ -196,7 +196,7 @@
       (append (list '(width  . 72) '(height . 40)
                     '(vertical-scroll-bars . nil)
                     '(internal-border-width . 24)
-                    '(font . "Roboto Mono 13")
+                    '(font . "Fira Code 13")
                     )))
 (set-frame-parameter (selected-frame)
                      'internal-border-width 24)
