@@ -1,5 +1,6 @@
 ;; NOTE: init.el is now generated from Emacs.org.  Please edit that file
 ;; in Emacs and init.el will be generated automatically!
+;; teste
 
 ;;________ {Configuraçoes gerais} ________;;
 (menu-bar-mode -1)
